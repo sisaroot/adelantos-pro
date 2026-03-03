@@ -34,10 +34,11 @@ def get_db():
         return conn, 'sqlite'
 
 def inicializar_db():
-    conn, db_type = get_db()
-    c = conn.cursor()
-    
-    if db_type == 'postgres':
+    try:
+        conn, db_type = get_db()
+        c = conn.cursor()
+        
+        if db_type == 'postgres':
         # PostgreSQL syntax
         c.execute('''CREATE TABLE IF NOT EXISTS registros
                      (id SERIAL PRIMARY KEY,
@@ -60,8 +61,10 @@ def inicializar_db():
                      (id INTEGER PRIMARY KEY AUTOINCREMENT,
                       username TEXT UNIQUE, password TEXT, role TEXT)''')
                       
-    conn.commit()
-    conn.close()
+        conn.commit()
+        conn.close()
+    except Exception as e:
+        print("Error inicializando la base de datos:", e)
 
 inicializar_db()
 
