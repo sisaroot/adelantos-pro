@@ -19,15 +19,14 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Vercel proveerá la variable DATABASE_URL para Postgres.
-DB_URL = os.environ.get('DATABASE_URL')
 # Local fallback
-LOCAL_DB = 'adelantos.db'
+LOCAL_DB = '/tmp/adelantos.db' if os.environ.get('VERCEL') else 'adelantos.db'
 
 def get_db():
-    if DB_URL:
+    db_url = os.environ.get('DATABASE_URL')
+    if db_url:
         # En Postgres Vercel usualmente requiere sslmode
-        conn = psycopg2.connect(DB_URL)
+        conn = psycopg2.connect(db_url)
         return conn, 'postgres'
     else:
         conn = sqlite3.connect(LOCAL_DB)
@@ -71,6 +70,16 @@ inicializar_db()
 class LoginData(BaseModel):
     username: str
     password: str
+
+@app.get("/api/ping")
+def ping():
+    db_url = os.environ.get("DATABASE_URL")
+    return {
+        "status": "ok", 
+        "msg": "Pong!", 
+        "has_db": bool(db_url),
+        "db_prefix": db_url[:15] if db_url else None
+    }
 
 @app.post("/api/login")
 def login(data: LoginData):
