@@ -39,28 +39,28 @@ def inicializar_db():
         c = conn.cursor()
         
         if db_type == 'postgres':
-        # PostgreSQL syntax
-        c.execute('''CREATE TABLE IF NOT EXISTS registros
-                     (id SERIAL PRIMARY KEY,
-                      ci TEXT, cliente TEXT, dinero_recibido REAL,
-                      forma_recepcion TEXT, fecha_recepcion TEXT, referencia TEXT,
-                      factura REAL, diferencia REAL, telefono TEXT,
-                      moneda TEXT DEFAULT 'USD', estado TEXT DEFAULT 'Pendiente')''')
-        c.execute('''CREATE TABLE IF NOT EXISTS usuarios
-                     (id SERIAL PRIMARY KEY,
-                      username TEXT UNIQUE, password TEXT, role TEXT)''')
-    else:
-        # SQLite syntax
-        c.execute('''CREATE TABLE IF NOT EXISTS registros
-                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      ci TEXT, cliente TEXT, dinero_recibido REAL,
-                      forma_recepcion TEXT, fecha_recepcion TEXT, referencia TEXT,
-                      factura REAL, diferencia REAL, telefono TEXT,
-                      moneda TEXT DEFAULT 'USD', estado TEXT DEFAULT 'Pendiente')''')
-        c.execute('''CREATE TABLE IF NOT EXISTS usuarios
-                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                      username TEXT UNIQUE, password TEXT, role TEXT)''')
-                      
+            # PostgreSQL syntax
+            c.execute('''CREATE TABLE IF NOT EXISTS registros
+                         (id SERIAL PRIMARY KEY,
+                          ci TEXT, cliente TEXT, dinero_recibido REAL,
+                          forma_recepcion TEXT, fecha_recepcion TEXT, referencia TEXT,
+                          factura REAL, diferencia REAL, telefono TEXT,
+                          moneda TEXT DEFAULT 'USD', estado TEXT DEFAULT 'Pendiente')''')
+            c.execute('''CREATE TABLE IF NOT EXISTS usuarios
+                         (id SERIAL PRIMARY KEY,
+                          username TEXT UNIQUE, password TEXT, role TEXT)''')
+        else:
+            # SQLite syntax
+            c.execute('''CREATE TABLE IF NOT EXISTS registros
+                         (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          ci TEXT, cliente TEXT, dinero_recibido REAL,
+                          forma_recepcion TEXT, fecha_recepcion TEXT, referencia TEXT,
+                          factura REAL, diferencia REAL, telefono TEXT,
+                          moneda TEXT DEFAULT 'USD', estado TEXT DEFAULT 'Pendiente')''')
+            c.execute('''CREATE TABLE IF NOT EXISTS usuarios
+                         (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                          username TEXT UNIQUE, password TEXT, role TEXT)''')
+                          
         conn.commit()
         conn.close()
     except Exception as e:
@@ -108,9 +108,10 @@ def registrar_usuario(data: LoginData):
         conn.close()
         return {"status": "ok", "msg": "Usuario registrado con éxito. Ya puedes iniciar sesión.", "role": role}
     except Exception as e:
-        if "UNIQUE constraint" in str(e) or "unique constraint" in str(e).lower():
+        error_msg = str(e)
+        if "UNIQUE constraint" in error_msg or "unique constraint" in error_msg.lower():
             return {"status": "error", "msg": "El nombre de usuario ya existe."}
-        return {"status": "error", "msg": str(e)}
+        return {"status": "error", "msg": error_msg}
 
 @app.get("/api/registros")
 def obtener_registros():
