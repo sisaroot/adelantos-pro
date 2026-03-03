@@ -1,0 +1,15 @@
+# Python / PyInstaller
+build/
+dist/
+*.spec
+__pycache__/
+*.pyc
+*.pyo
+
+# Database
+*.db
+*.sqlite3
+
+# Vercel / OS
+.vercel/
+.DS_Store
