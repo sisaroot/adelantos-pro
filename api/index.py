@@ -1,12 +1,16 @@
 import os
 import sqlite3
+try:
+    import psycopg2
+except ImportError:
+    pass # Solo se usa en producción/Nube
+
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 app = FastAPI()
 
-# Habilitar CORS para permitir llamadas si se separa el frontend del backend
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -15,31 +19,47 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# En Vercel, el sistema de archivos es de solo lectura excepto /tmp.
-DB_PATH = '/tmp/adelantos.db' if os.environ.get('VERCEL') else 'adelantos.db'
+# Vercel proveerá la variable DATABASE_URL para Postgres.
+DB_URL = os.environ.get('DATABASE_URL')
+# Local fallback
+LOCAL_DB = 'adelantos.db'
+
+def get_db():
+    if DB_URL:
+        # En Postgres Vercel usualmente requiere sslmode
+        conn = psycopg2.connect(DB_URL)
+        return conn, 'postgres'
+    else:
+        conn = sqlite3.connect(LOCAL_DB)
+        return conn, 'sqlite'
 
 def inicializar_db():
-    conn = sqlite3.connect(DB_PATH)
+    conn, db_type = get_db()
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS registros
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  ci TEXT,
-                  cliente TEXT,
-                  dinero_recibido REAL,
-                  forma_recepcion TEXT,
-                  fecha_recepcion TEXT,
-                  referencia TEXT,
-                  factura REAL,
-                  diferencia REAL,
-                  telefono TEXT,
-                  moneda TEXT DEFAULT 'USD',
-                  estado TEXT DEFAULT 'Pendiente')''')
     
-    c.execute('''CREATE TABLE IF NOT EXISTS usuarios
-                 (id INTEGER PRIMARY KEY AUTOINCREMENT,
-                  username TEXT UNIQUE,
-                  password TEXT,
-                  role TEXT)''')
+    if db_type == 'postgres':
+        # PostgreSQL syntax
+        c.execute('''CREATE TABLE IF NOT EXISTS registros
+                     (id SERIAL PRIMARY KEY,
+                      ci TEXT, cliente TEXT, dinero_recibido REAL,
+                      forma_recepcion TEXT, fecha_recepcion TEXT, referencia TEXT,
+                      factura REAL, diferencia REAL, telefono TEXT,
+                      moneda TEXT DEFAULT 'USD', estado TEXT DEFAULT 'Pendiente')''')
+        c.execute('''CREATE TABLE IF NOT EXISTS usuarios
+                     (id SERIAL PRIMARY KEY,
+                      username TEXT UNIQUE, password TEXT, role TEXT)''')
+    else:
+        # SQLite syntax
+        c.execute('''CREATE TABLE IF NOT EXISTS registros
+                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      ci TEXT, cliente TEXT, dinero_recibido REAL,
+                      forma_recepcion TEXT, fecha_recepcion TEXT, referencia TEXT,
+                      factura REAL, diferencia REAL, telefono TEXT,
+                      moneda TEXT DEFAULT 'USD', estado TEXT DEFAULT 'Pendiente')''')
+        c.execute('''CREATE TABLE IF NOT EXISTS usuarios
+                     (id INTEGER PRIMARY KEY AUTOINCREMENT,
+                      username TEXT UNIQUE, password TEXT, role TEXT)''')
+                      
     conn.commit()
     conn.close()
 
@@ -52,9 +72,11 @@ class LoginData(BaseModel):
 @app.post("/api/login")
 def login(data: LoginData):
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn, db_type = get_db()
         c = conn.cursor()
-        c.execute("SELECT role FROM usuarios WHERE username=? AND password=?", (data.username, data.password))
+        
+        query = "SELECT role FROM usuarios WHERE username=%s AND password=%s" if db_type == 'postgres' else "SELECT role FROM usuarios WHERE username=? AND password=?"
+        c.execute(query, (data.username, data.password))
         row = c.fetchone()
         conn.close()
         
@@ -71,25 +93,26 @@ def registrar_usuario(data: LoginData):
         return {"status": "error", "msg": "Debes llenar todos los campos."}
         
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn, db_type = get_db()
         c = conn.cursor()
         c.execute("SELECT COUNT(*) FROM usuarios")
-        count = c.fetchone()[0]
-        role = "admin" if count == 0 else "user"
+        count_val = c.fetchone()[0]
+        role = "admin" if count_val == 0 else "user"
         
-        c.execute("INSERT INTO usuarios (username, password, role) VALUES (?, ?, ?)", (data.username, data.password, role))
+        query = "INSERT INTO usuarios (username, password, role) VALUES (%s, %s, %s)" if db_type == 'postgres' else "INSERT INTO usuarios (username, password, role) VALUES (?, ?, ?)"
+        c.execute(query, (data.username, data.password, role))
         conn.commit()
         conn.close()
         return {"status": "ok", "msg": "Usuario registrado con éxito. Ya puedes iniciar sesión.", "role": role}
-    except sqlite3.IntegrityError:
-        return {"status": "error", "msg": "El nombre de usuario ya existe."}
     except Exception as e:
+        if "UNIQUE constraint" in str(e) or "unique constraint" in str(e).lower():
+            return {"status": "error", "msg": "El nombre de usuario ya existe."}
         return {"status": "error", "msg": str(e)}
 
 @app.get("/api/registros")
 def obtener_registros():
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn, db_type = get_db()
         c = conn.cursor()
         c.execute("SELECT id, ci, cliente, dinero_recibido, forma_recepcion, fecha_recepcion, referencia, factura, diferencia, telefono, moneda, estado FROM registros ORDER BY id DESC")
         filas = c.fetchall()
@@ -111,13 +134,20 @@ def obtener_registros():
 async def guardar_registro(request: Request):
     datos = await request.json()
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn, db_type = get_db()
         c = conn.cursor()
-        c.execute("""
+        
+        query = """
+            INSERT INTO registros 
+            (ci, cliente, dinero_recibido, forma_recepcion, fecha_recepcion, referencia, factura, diferencia, telefono, moneda, estado) 
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """ if db_type == 'postgres' else """
             INSERT INTO registros 
             (ci, cliente, dinero_recibido, forma_recepcion, fecha_recepcion, referencia, factura, diferencia, telefono, moneda, estado) 
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
+        """
+        
+        c.execute(query, (
             datos.get('ci'), datos.get('cliente'), float(datos.get('dinero_recibido', 0)),
             datos.get('forma_recepcion'), datos.get('fecha_recepcion'), datos.get('referencia'),
             float(datos.get('factura', 0)) if datos.get('factura') else 0.0,
@@ -134,13 +164,20 @@ async def guardar_registro(request: Request):
 async def actualizar_registro(id: int, request: Request):
     datos = await request.json()
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn, db_type = get_db()
         c = conn.cursor()
-        c.execute("""
+        
+        query = """
+            UPDATE registros SET
+            ci=%s, cliente=%s, dinero_recibido=%s, forma_recepcion=%s, fecha_recepcion=%s, referencia=%s, factura=%s, diferencia=%s, telefono=%s, moneda=%s, estado=%s
+            WHERE id=%s
+        """ if db_type == 'postgres' else """
             UPDATE registros SET
             ci=?, cliente=?, dinero_recibido=?, forma_recepcion=?, fecha_recepcion=?, referencia=?, factura=?, diferencia=?, telefono=?, moneda=?, estado=?
             WHERE id=?
-        """, (
+        """
+        
+        c.execute(query, (
             datos.get('ci'), datos.get('cliente'), float(datos.get('dinero_recibido', 0)),
             datos.get('forma_recepcion'), datos.get('fecha_recepcion'), datos.get('referencia'),
             float(datos.get('factura', 0)) if datos.get('factura') else 0.0,
@@ -156,9 +193,10 @@ async def actualizar_registro(id: int, request: Request):
 @app.delete("/api/registros/{id}")
 def eliminar_registro(id: int):
     try:
-        conn = sqlite3.connect(DB_PATH)
+        conn, db_type = get_db()
         c = conn.cursor()
-        c.execute("DELETE FROM registros WHERE id=?", (id,))
+        query = "DELETE FROM registros WHERE id=%s" if db_type == 'postgres' else "DELETE FROM registros WHERE id=?"
+        c.execute(query, (id,))
         conn.commit()
         conn.close()
         return {"status": "ok"}
