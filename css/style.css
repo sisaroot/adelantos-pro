@@ -566,3 +566,121 @@ select option {
         transform: translateY(10px);
     }
 }
+
+/* =========================================
+   Mobile Responsiveness
+   ========================================= */
+@media (max-width: 768px) {
+    /* Main Layout */
+    .app-container {
+        flex-direction: column;
+    }
+    
+    /* Sidebar turns into top nav */
+    .sidebar {
+        width: 100%;
+        padding: 16px;
+        border-right: none;
+        border-bottom: 1px solid var(--panel-border);
+        flex-direction: column;
+    }
+    
+    .logo-area {
+        margin-bottom: 16px;
+        justify-content: center;
+    }
+    
+    .nav-menu {
+        flex-direction: row;
+        gap: 8px;
+        overflow-x: auto;
+        padding-bottom: 8px;
+    }
+    
+    .nav-item {
+        flex: 0 0 auto;
+        padding: 8px 12px;
+        font-size: 0.9rem;
+    }
+    
+    .user-info {
+        padding-top: 12px;
+        justify-content: space-between;
+    }
+    
+    /* Main Content */
+    .main-content {
+        padding: 16px;
+        gap: 16px;
+    }
+    
+    .header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 16px;
+    }
+    
+    .header-actions {
+        width: 100%;
+    }
+    
+    .header-actions .btn {
+        width: 100%;
+        justify-content: center; /* Center icon and text */
+    }
+    
+    .page-title {
+        font-size: 1.5rem;
+    }
+    
+    /* Stats Grid */
+    .stats-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    /* Table Enhancements */
+    .table-container {
+        padding: 16px;
+    }
+    
+    .table-header {
+        flex-direction: column;
+        gap: 16px;
+        align-items: stretch;
+    }
+    
+    .table-header > div:first-child {
+        flex-direction: column;
+    }
+    
+    .tab-btn {
+        width: 100%;
+        text-align: center;
+    }
+    
+    .table-search {
+        width: 100%;
+    }
+    
+    /* Modal Adapts */
+    .modal-content {
+        max-width: 90%;
+        padding: 20px;
+        max-height: 90vh; /* Don't spill off screen */
+        overflow-y: auto;
+    }
+    
+    .form-row {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .modal-footer {
+        flex-direction: column-reverse; /* Cancel on bottom on mobile */
+    }
+    
+    .modal-footer .btn {
+        width: 100%;
+        justify-content: center;
+    }
+}
