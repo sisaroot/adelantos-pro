@@ -13,3 +13,6 @@ __pycache__/
 # Vercel / OS
 .vercel/
 .DS_Store
+
+# Local Backups
+.backup/
