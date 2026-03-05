@@ -60,8 +60,16 @@ function toggleAuthMode() {
 async function iniciarSesion() {
     const user = document.getElementById('loginUser').value;
     const pass = document.getElementById('loginPass').value;
+    const errorEl = document.getElementById('loginError');
 
-    if (!user || !pass) return showToast("Ingresa usuario y contraseña", "error");
+    // Clear previous error
+    errorEl.style.display = 'none';
+
+    if (!user || !pass) {
+        errorEl.textContent = "Ingresa usuario y contraseña";
+        errorEl.style.display = 'block';
+        return;
+    }
 
     try {
         const response = await fetch('/api/login', {
@@ -89,10 +97,12 @@ async function iniciarSesion() {
             cargarRegistros();
             showToast(`Bienvenido ${user}`, "success");
         } else {
-            showToast(res.msg, "error");
+            errorEl.textContent = "Usuario o contraseña incorrecto";
+            errorEl.style.display = 'block';
         }
     } catch (e) {
-        showToast("Error de conexión con el servidor", "error");
+        errorEl.textContent = "Error de conexión con el servidor";
+        errorEl.style.display = 'block';
     }
 }
 
@@ -191,21 +201,21 @@ function renderRecords() {
 
         const tr = document.createElement('tr');
         tr.innerHTML = `
-            <td>${reg.fecha_recepcion}</td>
-            <td><strong>${reg.ci}</strong></td>
-            <td>${reg.cliente}</td>
-            <td><strong>${reg.moneda}</strong></td>
-            <td style="color: var(--success)">${formatCurrency(reg.dinero_recibido, reg.moneda)}</td>
-            <td><span class="badge">${reg.forma_recepcion}</span></td>
-            <td>${reg.referencia || '-'}</td>
-            <td style="color: var(--blue)">
+            <td data-label="Fecha">${reg.fecha_recepcion}</td>
+            <td data-label="C.I"><strong>${reg.ci}</strong></td>
+            <td data-label="Cliente">${reg.cliente}</td>
+            <td data-label="Moneda"><strong>${reg.moneda}</strong></td>
+            <td data-label="Recibido" style="color: var(--success)">${formatCurrency(reg.dinero_recibido, reg.moneda)}</td>
+            <td data-label="Forma"><span class="badge">${reg.forma_recepcion}</span></td>
+            <td data-label="Referencia">${reg.referencia || '-'}</td>
+            <td data-label="a Pagar" style="color: var(--blue)">
                 ${reg.factura > 0 ? formatCurrency(reg.factura, reg.moneda) : '<span style="color:var(--text-muted); font-size: 0.8em; font-style: italic;">Pendiente</span>'}
             </td>
-            <td style="color: ${reg.diferencia > 0 ? 'var(--danger)' : 'var(--success)'}">
+            <td data-label="Diferencia" style="color: ${reg.diferencia > 0 ? 'var(--danger)' : 'var(--success)'}">
                 ${reg.factura > 0 ? formatCurrency(reg.diferencia, reg.moneda) : '-'}
             </td>
-            <td>${reg.telefono}</td>
-            <td class="admin-only" style="display: ${currentUserRole === 'admin' ? 'flex' : 'none'}; gap: 8px;">
+            <td data-label="Teléfono">${reg.telefono}</td>
+            <td data-label="Acción" class="admin-only" style="display: ${currentUserRole === 'admin' ? 'flex' : 'none'}; gap: 8px;">
                 <button class="btn btn-outline" style="padding: 6px 10px;" onclick="abrirModal(${reg.id})">
                     <i class='bx bx-edit'></i>
                 </button>

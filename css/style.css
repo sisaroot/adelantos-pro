@@ -683,4 +683,46 @@ select option {
         width: 100%;
         justify-content: center;
     }
+
+    /* Table Mobile Card Layout */
+    .data-table thead {
+        display: none; /* Hide table headers */
+    }
+
+    .data-table, .data-table tbody, .data-table tr, .data-table td {
+        display: block;
+        width: 100%;
+    }
+
+    .data-table tr {
+        margin-bottom: 16px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid var(--panel-border);
+        border-radius: 12px;
+        padding: 12px;
+    }
+
+    .data-table td {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 8px 0;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+        text-align: right;
+    }
+
+    .data-table td:last-child {
+        border-bottom: none;
+        justify-content: flex-end; /* Align actions to the right */
+        gap: 10px;
+        padding-top: 12px;
+    }
+
+    .data-table td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        color: var(--text-muted);
+        text-align: left;
+        margin-right: 15px;
+    }
 }

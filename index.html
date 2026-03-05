@@ -70,6 +70,7 @@
             <div class="logo-icon" style="margin: 0 auto 20px auto;"><i class='bx bx-wallet'></i></div>
             <h2 style="margin-bottom: 5px;">Adelantos<span>Pro</span></h2>
             <p style="color: var(--text-muted); margin-bottom: 25px;">Inicia sesión para continuar</p>
+            <p id="loginError" class="login-error" style="display: none; color: var(--danger); font-size: 0.9em; margin-bottom: 15px;"></p>
             <input type="text" id="loginUser" placeholder="Usuario">
             <input type="password" id="loginPass" placeholder="Contraseña">
             <button class="btn btn-primary" onclick="iniciarSesion()">Acceder <i class='bx bx-right-arrow-alt'></i></button>
@@ -125,7 +126,7 @@
             </header>
 
             <!-- Stats/Summary Area -->
-            <div class="stats-grid">
+            <div class="stats-grid" style="grid-template-columns: 1fr; max-width: 400px;">
                 <div class="stat-card glass-panel" style="flex-direction: column; align-items: flex-start;">
                     <div style="display:flex; align-items:center; gap:12px;">
                         <div class="stat-icon purple"><i class='bx bx-money-withdraw'></i></div>
@@ -134,26 +135,6 @@
                     <div class="stat-values" style="margin-top: 10px; display: flex; gap: 15px;">
                         <h3 id="statTotalRecibidoUSD" style="color:var(--success);">$0.00</h3>
                         <h3 id="statTotalRecibidoVES" style="color:var(--text-main);">0.00 Bs</h3>
-                    </div>
-                </div>
-                <div class="stat-card glass-panel" style="flex-direction: column; align-items: flex-start;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="stat-icon blue"><i class='bx bx-receipt'></i></div>
-                        <div class="stat-details"><p>Total a Pagar</p></div>
-                    </div>
-                    <div class="stat-values" style="margin-top: 10px; display: flex; gap: 15px;">
-                        <h3 id="statTotalPagarUSD" style="color:var(--blue);">$0.00</h3>
-                        <h3 id="statTotalPagarVES" style="color:var(--text-main);">0.00 Bs</h3>
-                    </div>
-                </div>
-                <div class="stat-card glass-panel" style="flex-direction: column; align-items: flex-start;">
-                    <div style="display:flex; align-items:center; gap:12px;">
-                        <div class="stat-icon orange"><i class='bx bx-line-chart'></i></div>
-                        <div class="stat-details"><p>Total Diferencia</p></div>
-                    </div>
-                    <div class="stat-values" style="margin-top: 10px; display: flex; gap: 15px;">
-                        <h3 id="statTotalDiferenciaUSD" style="color:var(--danger);">$0.00</h3>
-                        <h3 id="statTotalDiferenciaVES" style="color:var(--text-main);">0.00 Bs</h3>
                     </div>
                 </div>
             </div>
