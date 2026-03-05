@@ -16,6 +16,19 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
     });
+
+    // Handle "Forma de Recepción" toggle for "Referencia"
+    const inpForma = document.getElementById('inpForma');
+    const groupReferencia = document.getElementById('groupReferencia');
+
+    inpForma.addEventListener('change', function () {
+        if (this.value === 'Efectivo') {
+            groupReferencia.style.display = 'none';
+            document.getElementById('inpReferencia').value = ''; // clear when hidden
+        } else {
+            groupReferencia.style.display = 'flex';
+        }
+    });
 });
 
 // Auto-calculate difference
@@ -216,10 +229,11 @@ function renderRecords() {
             </td>
             <td data-label="Teléfono">${reg.telefono}</td>
             <td data-label="Acción" class="admin-only" style="display: ${currentUserRole === 'admin' ? 'flex' : 'none'}; gap: 8px;">
-                <button class="btn btn-outline" style="padding: 6px 10px;" onclick="abrirModal(${reg.id})">
+                ${(reg.estado || 'Pendiente') === 'Pendiente' ? `<button class="btn btn-success" style="padding: 6px 10px; background: var(--success); color: white;" onclick="marcarPagado(${reg.id})" title="Marcar como Pagado"><i class='bx bx-check-double'></i></button>` : ''}
+                <button class="btn btn-outline" style="padding: 6px 10px;" onclick="abrirModal(${reg.id})" title="Editar">
                     <i class='bx bx-edit'></i>
                 </button>
-                <button class="btn btn-danger" style="padding: 6px 10px;" onclick="eliminarRegistro(${reg.id})">
+                <button class="btn btn-danger" style="padding: 6px 10px;" onclick="eliminarRegistro(${reg.id})" title="Eliminar">
                     <i class='bx bx-trash'></i>
                 </button>
             </td>
@@ -243,6 +257,9 @@ function abrirModal(id = null) {
     document.getElementById('registroModal').classList.add('active');
     document.getElementById('registroForm').reset();
 
+    const inpForma = document.getElementById('inpForma');
+    const groupReferencia = document.getElementById('groupReferencia');
+
     if (id) {
         // Modo Edición
         document.getElementById('modalTitle').innerText = "Editar Adelanto o Factura";
@@ -254,7 +271,7 @@ function abrirModal(id = null) {
             document.getElementById('inpDineroRecibido').value = reg.dinero_recibido;
             document.getElementById('inpFactura').value = reg.factura > 0 ? reg.factura : '';
             document.getElementById('inpDiferencia').value = reg.diferencia;
-            document.getElementById('inpForma').value = reg.forma_recepcion;
+            inpForma.value = reg.forma_recepcion;
             document.getElementById('inpMoneda').value = reg.moneda || 'USD';
             document.getElementById('inpFecha').value = reg.fecha_recepcion;
             document.getElementById('inpReferencia').value = reg.referencia || '';
@@ -267,10 +284,17 @@ function abrirModal(id = null) {
         document.getElementById('inpId').value = '';
         const today = new Date().toISOString().split('T')[0];
         document.getElementById('inpFecha').value = today;
-        document.getElementById('inpForma').value = 'Efectivo';
+        inpForma.value = 'Efectivo';
         document.getElementById('inpMoneda').value = 'USD';
         document.getElementById('inpEstado').value = 'Pendiente';
         document.getElementById('inpDiferencia').value = 0.00;
+    }
+
+    // Trigger display toggle for Reference
+    if (inpForma.value === 'Efectivo') {
+        groupReferencia.style.display = 'none';
+    } else {
+        groupReferencia.style.display = 'flex';
     }
 }
 
@@ -348,6 +372,48 @@ async function eliminarRegistro(id) {
             }
         } catch (e) {
             showToast("Error al eliminar", "error");
+        }
+    }
+}
+
+// Marcar como pagado
+async function marcarPagado(id) {
+    if (confirm("¿Marcar este adelanto como procesado/pagado?")) {
+        try {
+            const reg = registrosGlobal.find(r => r.id === id);
+            if (!reg) return;
+
+            // Conservar el resto de los datos y cambiar solo estado
+            const datos = {
+                id: reg.id,
+                ci: reg.ci,
+                cliente: reg.cliente,
+                dinero_recibido: reg.dinero_recibido,
+                factura: reg.factura,
+                diferencia: reg.diferencia,
+                forma_recepcion: reg.forma_recepcion,
+                fecha_recepcion: reg.fecha_recepcion,
+                referencia: reg.referencia,
+                telefono: reg.telefono,
+                moneda: reg.moneda,
+                estado: 'Procesado' // Cambio clave
+            };
+
+            const req = await fetch(`/api/registros/${id}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(datos)
+            });
+            const res = await req.json();
+
+            if (res.status === 'ok') {
+                showToast("Registro marcado como pagado", 'success');
+                cargarRegistros();
+            } else {
+                showToast(res.msg, 'error');
+            }
+        } catch (e) {
+            showToast("Error al procesar", "error");
         }
     }
 }

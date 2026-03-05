@@ -118,11 +118,6 @@
                     <h1 class="page-title">Bienvenido de nuevo 👋</h1>
                     <p class="page-subtitle">Gestiona tus adelantos y cobros de forma eficiente.</p>
                 </div>
-                <div class="header-actions">
-                    <button class="btn btn-primary admin-only" onclick="abrirModal()">
-                        <i class='bx bx-plus'></i> Nuevo Adelanto
-                    </button>
-                </div>
             </header>
 
             <!-- Stats/Summary Area -->
@@ -201,9 +196,9 @@
                         <label>Dinero Recibido *</label>
                         <input type="number" step="0.01" id="inpDineroRecibido" required oninput="calcularDiferencia()">
                     </div>
-                    <div class="form-group">
+                    <div class="form-group admin-only">
                         <label>Monto a Pagar (Factura)</label>
-                        <input type="number" step="0.01" id="inpFactura" placeholder="Opcional hasta tener factura" oninput="calcularDiferencia()">
+                        <input type="number" step="0.01" id="inpFactura" placeholder="Solo Administradores" oninput="calcularDiferencia()">
                     </div>
                 </div>
                 <div class="form-row">
@@ -224,7 +219,7 @@
                         </select>
                     </div>
                 </div>
-                <div class="form-row">
+                <div class="form-row" style="display: none;">
                     <div class="form-group">
                         <label>Diferencia (Auto)</label>
                         <input type="number" step="0.01" id="inpDiferencia" readonly required>
@@ -242,7 +237,7 @@
                         <label>Fecha de Recepción *</label>
                         <input type="date" id="inpFecha" required>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group" id="groupReferencia">
                         <label>Referencia</label>
                         <input type="text" id="inpReferencia">
                     </div>
